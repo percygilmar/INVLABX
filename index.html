@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio X - Inventario Completo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: rgba(44, 62, 80, 0.95); }
+        .main-container { background: rgba(255, 255, 255, 0.95); border-radius: 20px; margin: 20px 0; padding: 30px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .table thead th { background: #2c3e50; color: white; }
+        .low-stock { background-color: #e74c3c; }
+        .medium-stock { background-color: #f39c12; }
+        .high-stock { background-color: #27ae60; }
+        .search-box { border-radius: 50px; }
+        .category-btn { margin: 5px; border-radius: 25px; }
+        .category-btn.active { background: #3498db; color: white; }
+        .action-btn { padding: 0.25rem 0.5rem; margin: 0 2px; }
+        .stats-card { background: linear-gradient(135deg, #3498db, #5dade2); color: white; border-radius: 15px; }
+        .animate-number { font-size: 2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-flask me-2"></i><strong>Laboratorio X</strong></a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#"><i class="fas fa-boxes me-1"></i>Inventario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#itemModal"><i class="fas fa-plus me-1"></i>Agregar</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-container">
+            <h1 class="text-center mb-4"><i class="fas fa-mobile-alt me-2" style="color: #3498db;"></i>Inventario Completo - Servicio Técnico</h1>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mobile-alt fa-2x mb-2"></i>
+                            <div class="animate-number" id="totalItems">0</div>
+                            <small>Total Items</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tags fa-2x mb-2"></i>
+                            <div class="animate-number" id="totalBrands">0</div>
+                            <small>Marcas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <div class="animate-number" id="lowStock">0</div>
+                            <small>Stock Bajo</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-box fa-2x mb-2"></i>
+                            <div class="animate-number" id="totalTypes">0</div>
+                            <small>Tipos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control search-box" id="searchInput" placeholder="Buscar por marca, modelo o compatible...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">Todos los tipos</option>
+                        <option value="Pantalla">Pantalla</option>
+                        <option value="Glass">Glass</option>
+                        <option value="Caja">Caja</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="stockFilter">
+                        <option value="">Todo stock</option>
+                        <option value="low">Stock Bajo (< 5)</option>
+                        <option value="medium">Stock Medio (5-10)</option>
+                        <option value="high">Stock Alto (> 10)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" id="clearFilters">
+                        <i class="fas fa-times me-1"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <button class="btn btn-outline-primary category-btn active" data-category="all">Todos</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="XIAOMI">Xiaomi</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="SAMSUNG">Samsung</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="HUAWEI">Huawei</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="HONOR">Honor</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="REALME">Realme</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="TECNO">Tecno</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="INFINIX">Infinix</button>
+                    <button class="btn btn-outline-primary category-btn" data-category="ZTE">ZTE</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Inventario Actual <span class="badge bg-light text-dark ms-2" id="itemCount">0</span></h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Compatible</th>
+                                    <th>Tipo</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="itemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle"><i class="fas fa-plus me-2"></i>Agregar Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="itemForm">
+                        <input type="hidden" id="editId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Marca</label>
+                                <select class="form-select" id="itemBrand" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="XIAOMI">Xiaomi</option>
+                                    <option value="SAMSUNG">Samsung</option>
+                                    <option value="HUAWEI">Huawei</option>
+                                    <option value="HONOR">Honor</option>
+                                    <option value="REALME">Realme</option>
+                                    <option value="TECNO">Tecno</option>
+                                    <option value="INFINIX">Infinix</option>
+                                    <option value="ZTE">ZTE</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Modelo</label>
+                                <input type="text" class="form-control" id="itemModel" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Compatible</label>
+                                <input type="text" class="form-control" id="itemCompatible">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo</label>
+                                <select class="form-select" id="itemType" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Pantalla">Pantalla</option>
+                                    <option value="Glass">Glass</option>
+                                    <option value="Caja">Caja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" class="form-control" id="itemQuantity" min="0" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveItem()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let inventory = [];
+        let filteredInventory = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInventory();
+            setupEventListeners();
+            renderInventoryTable();
+            updateStats();
+        });
+        
+        function loadInventory() {
+            const savedInventory = localStorage.getItem('inventoryData');
+            
+            // Datos de pantallas de los archivos Excel
+            const pantallasInventory = [
+                // PANTALLAS XIAOMI-POCO-REDMI-MI
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 10 4G', compatible: '', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 10 5G', compatible: 'Poco M4 Pro 5G- Redmi note 11E', type: 'Pantalla', quantity: 5 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 12C', compatible: '', type: 'Pantalla', quantity: 5 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 12', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi Note 9', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 9 Pro', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 13C', compatible: '', type: 'Pantalla', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 8 Lite', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 11 Lite', compatible: '', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 11 Ultra', compatible: 'MI 11', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 10 T Pro', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 9s', compatible: 'Redmi note 9', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Poco X3', compatible: '', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Poco X6 pro', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Poco F3', compatible: 'MI 11i', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Poco X3 GT', compatible: '', type: 'Pantalla', quantity: 1 },
+                
+                // PANTALLAS REALME
+                { id: generateId(), brand: 'REALME', model: 'C53', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'REALME', model: '8 5G', compatible: '', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'REALME', model: 'C35', compatible: '', type: 'Pantalla', quantity: 5 },
+                { id: generateId(), brand: 'REALME', model: '6', compatible: '7-6S', type: 'Pantalla', quantity: 4 },
+                
+                // PANTALLAS SAMSUNG
+                { id: generateId(), brand: 'SAMSUNG', model: 'A05', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A14', compatible: '', type: 'Pantalla', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A04', compatible: 'A03s-A02s', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A12', compatible: '', type: 'Pantalla', quantity: 0 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A23 5G', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A32 5G', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A54', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A53', compatible: '', type: 'Pantalla', quantity: 0 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'M51', compatible: '', type: 'Pantalla', quantity: 1 },
+                
+                // PANTALLAS TECNO-INFINIX-ZTE
+                { id: generateId(), brand: 'TECNO', model: 'Spark 10C', compatible: '', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'TECNO', model: 'Pova 4', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 17', compatible: '', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 18', compatible: 'Camon 18p', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 8c', compatible: 'Sparck 8t-Sparck 8p', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 30 play', compatible: '', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'INFINIX', model: 'Smart 8', compatible: '', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 20s', compatible: '', type: 'Pantalla', quantity: 5 },
+                { id: generateId(), brand: 'ZTE', model: 'A54', compatible: 'A34', type: 'Pantalla', quantity: 4 },
+                
+                // PANTALLAS HONOR-HUAWEI
+                { id: generateId(), brand: 'HUAWEI', model: 'P40 Lite', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'HUAWEI', model: 'P30 Lite', compatible: '', type: 'Pantalla', quantity: 6 },
+                { id: generateId(), brand: 'HUAWEI', model: 'Mate 20 Lite', compatible: '', type: 'Pantalla', quantity: 4 },
+                { id: generateId(), brand: 'HUAWEI', model: 'Mate 10 Lite', compatible: '', type: 'Pantalla', quantity: 2 },
+                { id: generateId(), brand: 'HUAWEI', model: 'Y9 Prime 2019', compatible: '', type: 'Pantalla', quantity: 1 },
+                { id: generateId(), brand: 'HONOR', model: 'X7A', compatible: '', type: 'Pantalla', quantity: 5 },
+                { id: generateId(), brand: 'HONOR', model: '8X', compatible: '', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'HONOR', model: '90 Lite', compatible: 'X8A', type: 'Pantalla', quantity: 3 },
+                { id: generateId(), brand: 'HONOR', model: 'X8', compatible: '', type: 'Pantalla', quantity: 9 }
+            ];
+            
+            // Datos de glass de los archivos Excel
+            const glassInventory = [
+                // GLASS DE TECNO-INFINIX
+                { id: generateId(), brand: 'TECNO', model: 'POVA 4', compatible: 'POVA NEO 2', type: 'Glass', quantity: 5 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 8c', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark go 2024', compatible: 'Infinix Smart 8', type: 'Glass', quantity: 7 },
+                { id: generateId(), brand: 'TECNO', model: 'POCA 5 PRO', compatible: 'Spark 10 pro', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'TECNO', model: 'POVA 3', compatible: 'POVA 2', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 17 pro', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 20', compatible: '', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 6', compatible: 'POVA- Camon 16', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 10 c', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'TECNO', model: 'spark 20 pro', compatible: '', type: 'Glass', quantity: 5 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 18', compatible: 'Camon 18p', type: 'Glass', quantity: 4 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark go 10 pro', compatible: '', type: 'Glass', quantity: 1 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark 10', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'TECNO', model: 'Spark go 2023', compatible: '', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 20 premier', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'TECNO', model: 'Camon 17', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'INFINIX', model: 'Smart 8', compatible: 'Tecno Spark go 2024', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 11s', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'INFINIX', model: 'Note 30 pro', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 30i', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 30 play', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 10', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 10 lite', compatible: 'Tecno Spark 6 go', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hoy 20', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'INFINIX', model: 'Note 30', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 40 pro', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'INFINIX', model: 'Hot 20s', compatible: '', type: 'Glass', quantity: 10 },
+                
+                // GLASS DE XIAOMI-MI-POCO-REDMI
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 11t pro', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'XIAOMI', model: 'MI 9t pro', compatible: 'MI 9t', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 9', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 12c', compatible: '', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 13c', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi 9t', compatible: 'Poco M3', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 10 pro 4G', compatible: 'Redmi Note 11 pro plus-Redmi note 11 pro', type: 'Glass', quantity: 4 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 12', compatible: '', type: 'Glass', quantity: 5 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 11 pro', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 13 pro', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'XIAOMI', model: 'Redmi note 12 pro plus', compatible: '', type: 'Glass', quantity: 9 },
+                
+                // GLASS HONOR-HUAWEI
+                { id: generateId(), brand: 'HONOR', model: 'X7B', compatible: '', type: 'Glass', quantity: 1 },
+                { id: generateId(), brand: 'HONOR', model: 'X7A', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'HONOR', model: 'X7', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'HONOR', model: 'X6A', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'HONOR', model: 'X8', compatible: 'X8A', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'HUAWEI', model: 'P40 LITE', compatible: '', type: 'Glass', quantity: 10 },
+                
+                // GLASS REALME
+                { id: generateId(), brand: 'REALME', model: 'C65', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'REALME', model: '6', compatible: '7', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'REALME', model: 'C35', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'REALME', model: '53', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'REALME', model: '9 PRO', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'REALME', model: 'C21y', compatible: '', type: 'Glass', quantity: 10 },
+                
+                // GLASS SAMSUNG
+                { id: generateId(), brand: 'SAMSUNG', model: 'A71', compatible: '', type: 'Glass', quantity: 5 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'S24 PLUS', compatible: 'S24', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A15', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A54', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A23', compatible: 'A13-M33', type: 'Glass', quantity: 7 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'S24 ULTRA', compatible: '', type: 'Glass', quantity: 5 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'S23 ULTRA', compatible: '', type: 'Glass', quantity: 3 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A24', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A21S', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'S20 FE', compatible: '', type: 'Glass', quantity: 7 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A70', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A72', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'S23', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A33', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A12', compatible: 'A02', type: 'Glass', quantity: 4 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A14', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A05', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A53', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A80', compatible: '', type: 'Glass', quantity: 10 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A34', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A51', compatible: '', type: 'Glass', quantity: 6 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A52', compatible: '', type: 'Glass', quantity: 8 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A04', compatible: 'A03S-A02S', type: 'Glass', quantity: 11 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A03 CORE', compatible: '', type: 'Glass', quantity: 9 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A20S', compatible: '', type: 'Glass', quantity: 11 },
+                { id: generateId(), brand: 'SAMSUNG', model: 'A73', compatible: '', type: 'Glass', quantity: 10 },
+                
+                // CAJAS
+                { id: generateId(), brand: 'INFINIX', model: 'ZERO 30', compatible: '', type: 'Caja', quantity: 1 },
+                { id: generateId(), brand: 'TECNO', model: 'POVA 6', compatible: '', type: 'Caja', quantity: 1 },
+                { id: generateId(), brand: 'HONOR', model: 'MAGIC 5 LITE', compatible: '', type: 'Caja', quantity: 1 },
+                { id: generateId(), brand: 'HONOR', model: 'MAGIC 6 LITE', compatible: '', type: 'Caja', quantity: 1 }
+            ];
+            
+            if (savedInventory) {
+                // Si hay datos guardados, cargarlos
+                inventory = JSON.parse(savedInventory);
+                
+                // Añadir elementos de pantallas y glass que no existan en el inventario actual
+                const allInventory = [...pantallasInventory, ...glassInventory];
+                
+                allInventory.forEach(newItem => {
+                    const exists = inventory.some(item => 
+                        item.brand === newItem.brand && 
+                        item.model === newItem.model && 
+                        item.type === newItem.type
+                    );
+                    
+                    if (!exists) {
+                        inventory.push(newItem);
+                    }
+                });
+            } else {
+                // Si no hay datos guardados, usar todos los datos
+                inventory = [...pantallasInventory, ...glassInventory];
+            }
+            
+            saveInventory();
+            filteredInventory = [...inventory];
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', filterInventory);
+            document.getElementById('categoryFilter').addEventListener('change', filterInventory);
+            document.getElementById('stockFilter').addEventListener('change', filterInventory);
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    filterInventory();
+                });
+            });
+        }
+        
+        function filterInventory() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const stockFilter = document.getElementById('stockFilter').value;
+            const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+            
+            filteredInventory = inventory.filter(item => {
+                const matchesSearch = searchText === '' || 
+                    item.brand.toLowerCase().includes(searchText) || 
+                    item.model.toLowerCase().includes(searchText) ||
+                    (item.compatible && item.compatible.toLowerCase().includes(searchText));
+                
+                const matchesCategory = categoryFilter === '' || item.type === categoryFilter;
+                
+                const matchesBrand = activeCategory === 'all' || item.brand === activeCategory;
+                
+                let matchesStock = true;
+                if (stockFilter === 'low') {
+                    matchesStock = item.quantity < 5;
+                } else if (stockFilter === 'medium') {
+                    matchesStock = item.quantity >= 5 && item.quantity <= 10;
+                } else if (stockFilter === 'high') {
+                    matchesStock = item.quantity > 10;
+                }
+                
+                return matchesSearch && matchesCategory && matchesBrand && matchesStock;
+            });
+            
+            renderInventoryTable();
+            updateStats();
+        }
+        
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('stockFilter').value = '';
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.getAttribute('data-category') === 'all') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            filteredInventory = [...inventory];
+            renderInventoryTable();
+            updateStats();
+        }
+        
+        function renderInventoryTable() {
+            const tableBody = document.getElementById('inventoryTable');
+            tableBody.innerHTML = '';
+            
+            if (filteredInventory.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-search fa-2x mb-2 text-muted"></i>
+                            <p class="text-muted">No se encontraron items que coincidan con los filtros</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('itemCount').textContent = '0';
+                return;
+            }
+            
+            filteredInventory.forEach(item => {
+                const stockClass = getStockClass(item.quantity);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.brand}</td>
+                    <td>${item.model}</td>
+                    <td>${item.compatible || '-'}</td>
+                    <td>${item.type}</td>
+                    <td><span class="badge ${stockClass}">${item.quantity}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary action-btn" onclick="editItem('${item.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success action-btn" onclick="adjustStock('${item.id}', 1)">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning action-btn" onclick="adjustStock('${item.id}', -1)">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            document.getElementById('itemCount').textContent = filteredInventory.length;
+        }
+        
+        function getStockClass(quantity) {
+            if (quantity < 3) return 'low-stock';
+            if (quantity < 10) return 'medium-stock';
+            return 'high-stock';
+        }
+        
+        function updateStats() {
+            const totalItems = filteredInventory.reduce((sum, item) => sum + item.quantity, 0);
+            const totalBrands = new Set(filteredInventory.map(item => item.brand)).size;
+            const lowStockItems = filteredInventory.filter(item => item.quantity < 5).length;
+            const totalTypes = new Set(filteredInventory.map(item => item.type)).size;
+            
+            document.getElementById('totalItems').textContent = totalItems;
+            document.getElementById('totalBrands').textContent = totalBrands;
+            document.getElementById('lowStock').textContent = lowStockItems;
+            document.getElementById('totalTypes').textContent = totalTypes;
+        }
+        
+        function saveItem() {
+            const form = document.getElementById('itemForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const id = document.getElementById('editId').value;
+            const isEdit = !!id;
+            
+            const item = {
+                brand: document.getElementById('itemBrand').value,
+                model: document.getElementById('itemModel').value,
+                compatible: document.getElementById('itemCompatible').value,
+                type: document.getElementById('itemType').value,
+                quantity: parseInt(document.getElementById('itemQuantity').value)
+            };
+            
+            if (isEdit) {
+                item.id = id;
+                const index = inventory.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    inventory[index] = item;
+                }
+            } else {
+                item.id = generateId();
+                inventory.push(item);
+            }
+            
+            saveInventory();
+            filterInventory();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
+            modal.hide();
+        }
+        
+        function editItem(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+            
+            document.getElementById('editId').value = item.id;
+            document.getElementById('itemBrand').value = item.brand;
+            document.getElementById('itemModel').value = item.model;
+            document.getElementById('itemCompatible').value = item.compatible || '';
+            document.getElementById('itemType').value = item.type;
+            document.getElementById('itemQuantity').value = item.quantity;
+            
+            const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+            modal.show();
+        }
+        
+        function adjustStock(id, change) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+            
+            const newQuantity = item.quantity + change;
+            if (newQuantity < 0) return;
+            
+            item.quantity = newQuantity;
+            saveInventory();
+            filterInventory();
+        }
+        
+        function saveInventory() {
+            localStorage.setItem('inventoryData', JSON.stringify(inventory));
+        }
+        
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+    </script>
+</body>
+</html>
